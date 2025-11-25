@@ -357,6 +357,7 @@ mod test {
         futures::{SinkExt, Stream},
         std::future::ready,
         std::os::unix::fs::PermissionsExt,
+        std::os::fd::AsRawFd,
         std::path::PathBuf,
         tokio::{
             io::AsyncWriteExt,
@@ -1484,22 +1485,18 @@ mod test {
             let (tx, rx) = SourceSender::new_test();
             let (guard, address) = next_addr();
 
-            // let _socket = UdpSocket::bind(address).unwrap();
-            // // Wait for UDP to start listening
-            // tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+            let socket = UdpSocket::bind(address).unwrap();
 
-            // let fd = socket.as_raw_fd() as usize;
-            // let source = UdpConfig::from_address(SocketListenAddr::from(fd))
-            //     .build(SourceContext::new_test(sender, None))
-            //     .await
-            //     .unwrap();
-            //
-            // let source = UdpConfig::from_address(SocketListenAddr::from(address))
-            //     .build(SourceContext::new_test(sender, None))
-            //     .await
-            //     .unwrap();
-            //
-            let config = UdpConfig::from_address(SocketListenAddr::from(address));
+            // Wait for UDP to start listening
+            tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
+            drop(guard);
+
+            let fd = socket.as_raw_fd() as usize;
+            dbg!(fd);
+            let offset = socket.as_raw_fd() as usize - 0;
+            dbg!(offset);
+            let config = UdpConfig::from_address(SocketListenAddr::from(offset));
 
             let server = SocketConfig::from(config)
                 .build(SourceContext {
@@ -1517,13 +1514,6 @@ mod test {
                 .await
                 .unwrap();
             let _source_handle = tokio::spawn(server);
-
-            // Wait for UDP to start listening
-            tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-
-            if let Some(guard) = guard {
-                drop(guard)
-            }
 
             send_lines_udp(address, vec!["test".to_string()]).await;
             let events = collect_n(rx, 1).await;
