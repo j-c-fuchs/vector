@@ -1482,7 +1482,7 @@ mod test {
     async fn test_systemd_socket_activation() {
         assert_source_compliance(&SOCKET_PUSH_SOURCE_TAGS, async {
             let (tx, rx) = SourceSender::new_test();
-            let (_guard, address) = next_addr();
+            let (guard, address) = next_addr();
 
             // let _socket = UdpSocket::bind(address).unwrap();
             // // Wait for UDP to start listening
@@ -1517,6 +1517,13 @@ mod test {
                 .await
                 .unwrap();
             let _source_handle = tokio::spawn(server);
+
+            // Wait for UDP to start listening
+            tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
+            if let Some(guard) = guard {
+                drop(guard)
+            }
 
             send_lines_udp(address, vec!["test".to_string()]).await;
             let events = collect_n(rx, 1).await;
