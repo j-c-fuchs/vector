@@ -1477,6 +1477,59 @@ mod test {
         .await;
     }
 
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn test_systemd_socket_activation() {
+        assert_source_compliance(&SOCKET_PUSH_SOURCE_TAGS, async {
+            let (tx, rx) = SourceSender::new_test();
+            let (_guard, address) = next_addr();
+
+            // let _socket = UdpSocket::bind(address).unwrap();
+            // // Wait for UDP to start listening
+            // tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
+            // let fd = socket.as_raw_fd() as usize;
+            // let source = UdpConfig::from_address(SocketListenAddr::from(fd))
+            //     .build(SourceContext::new_test(sender, None))
+            //     .await
+            //     .unwrap();
+            //
+            // let source = UdpConfig::from_address(SocketListenAddr::from(address))
+            //     .build(SourceContext::new_test(sender, None))
+            //     .await
+            //     .unwrap();
+            //
+            let config = UdpConfig::from_address(SocketListenAddr::from(address));
+
+            let server = SocketConfig::from(config)
+                .build(SourceContext {
+                    key: ComponentKey::from("default"),
+                    globals: GlobalOptions::default(),
+                    enrichment_tables: Default::default(),
+                    shutdown: ShutdownSignal::noop(),
+                    out: tx,
+                    proxy: Default::default(),
+                    acknowledgements: false,
+                    schema: Default::default(),
+                    schema_definitions: HashMap::default(),
+                    extra_context: Default::default(),
+                })
+                .await
+                .unwrap();
+            let _source_handle = tokio::spawn(server);
+
+            send_lines_udp(address, vec!["test".to_string()]).await;
+            let events = collect_n(rx, 1).await;
+
+            assert_eq!(
+                events[0].as_log()[log_schema().message_key().unwrap().to_string()],
+                "test".into()
+            );
+        })
+        .await;
+    }
+
+
     ////////////// UNIX TEST LIBS //////////////
 
     #[cfg(unix)]

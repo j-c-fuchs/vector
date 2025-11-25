@@ -493,7 +493,8 @@ ntapi = { git = "https://github.com/MSxDOS/ntapi.git", rev = "24fc1e47677fc9f6e3
 
 [features]
 # Default features for *-unknown-linux-gnu and *-apple-darwin
-default = ["api", "api-client", "enrichment-tables", "sinks", "sources", "sources-dnstap", "transforms", "unix", "rdkafka?/gssapi-vendored", "secrets"]
+#default = ["api", "api-client", "enrichment-tables", "sinks", "sources", "sources-dnstap", "transforms", "unix", "rdkafka?/gssapi-vendored", "secrets"]
+default = ["api", "api-client", "enrichment-tables", "sinks-slim", "sources-slim", "transforms", "unix", "secrets"]
 # Default features for `cargo docs`. The same as `default` but without `rdkafka?/gssapi-vendored` which would require installing libsasl in our doc build environment.
 docs = ["api", "api-client", "enrichment-tables", "sinks", "sources", "sources-dnstap", "transforms", "unix", "secrets"]
 # Default features for *-unknown-linux-* which make use of `cmake` for dependencies
@@ -592,6 +593,16 @@ secrets-aws-secrets-manager = ["aws-core", "dep:aws-sdk-secretsmanager"]
 
 # Sources
 sources = ["sources-logs", "sources-metrics"]
+sources-slim = [
+  "sources-exec",
+  "sources-file",
+  "sources-journald",
+  "sources-file_descriptor",
+  "sources-socket",
+  "sources-stdin",
+  "sources-syslog",
+  "sources-vector",
+]
 sources-logs = [
   "sources-amqp",
   "sources-aws_kinesis_firehose",
@@ -769,6 +780,12 @@ transforms-impl-reduce = []
 
 # Sinks
 sinks = ["sinks-logs", "sinks-metrics"]
+sinks-slim = [
+  "sinks-console",
+  "sinks-file",
+  "sinks-socket",
+  "sinks-vector",
+]
 sinks-logs = [
   "sinks-amqp",
   "sinks-appsignal",
